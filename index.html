@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NHL Bracket Viewer</title>
+<style>
+:root{--bg:#0b1020;--panel:#121935;--panel2:#1a2447;--text:#eef2ff;--muted:#b6bfde;--line:#2b3768;--accent:#5f8fff;--accent2:#8fb3ff}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1700px;margin:0 auto;padding:20px}h1{margin:0 0 8px;font-size:30px}.sub{color:var(--muted);margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tab,.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}
+.tab.active,.btn.primary{background:var(--accent);border-color:var(--accent)}
+input[type="text"]{background:#0c1329;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;background:var(--panel);min-width:1100px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap;font-size:14px}
+th{background:var(--panel2);position:sticky;top:0;z-index:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.hidden{display:none}.muted{color:var(--muted)} a{color:var(--accent2)}
+.viewer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.viewer-card{background:#0c1329;border:1px solid var(--line);border-radius:12px;padding:12px}
+.viewer-card h4{margin:0 0 10px;font-size:15px}.viewer-card .line{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}.viewer-card .line:last-child{border-bottom:none}
+.small{font-size:12px;color:var(--muted)}.score{font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NHL Bracket Viewer</h1>
+  <div class="sub">Live viewer and leaderboard using your Google Sheets brackets and results tabs.</div>
+
+  <div class="card">
+    <div class="row">
+      <button class="btn primary" id="refreshBtn">Refresh Data</button>
+      <button class="btn" id="downloadLeaderboardBtn" disabled>Download Leaderboard CSV</button>
+      <button class="btn" id="downloadEntriesBtn" disabled>Download Entries CSV</button>
+      <span id="status" class="muted">Loading…</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="leaderboard">Leaderboard</button>
+    <button class="tab" data-tab="entries">Entries</button>
+    <button class="tab" data-tab="results">Results</button>
+  </div>
+
+  <div id="leaderboardTab" class="card">
+    <div class="row" style="margin-bottom:12px">
+      <input id="leaderboardSearch" type="text" placeholder="Search leaderboard..." style="flex:1 1 280px" />
+      <span class="muted">Scoring: 10 / 25 / 50 / 100 + 3 exact-games bonus in Round 1.</span>
+    </div>
+    <div class="table-wrap">
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Twitter</th>
+            <th>Bracket Name</th>
+            <th>Points</th>
+            <th>Correct Picks</th>
+            <th>Exact Games Bonus</th>
+            <th>Tie Breaker</th>
+            <th>Tie Breaker Diff</th>
+            <th>Champion</th>
+            <th>Bracket Link</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="entriesTab" class="card hidden">
+    <div class="row" style="margin-bottom:12px">
+      <input id="entrySearch" type="text" placeholder="Search by bracket name, handle, champion, or team..." style="flex:1 1 320px" />
+      <span id="entryCount" class="muted"></span>
+    </div>
+    <div class="table-wrap" style="margin-bottom:14px">
+      <table id="entriesTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="entryViewer" class="hidden">
+      <h3 style="margin:0 0 12px">Bracket Viewer</h3>
+      <div class="viewer-grid" id="viewerGrid"></div>
+    </div>
+  </div>
+
+  <div id="resultsTab" class="card hidden">
+    <div class="table-wrap">
+      <table id="resultsTable">
+        <thead><tr><th>Key</th><th>Value</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const BRACKETS_URL = "https://docs.google.com/spreadsheets/d/1XaQPLxRZ18eqAREojnr5JqJoeU8ra1kf98q_fm9x4uw/export?format=csv&gid=542756233";
+const RESULTS_URL = "https://docs.google.com/spreadsheets/d/1XaQPLxRZ18eqAREojnr5JqJoeU8ra1kf98q_fm9x4uw/export?format=csv&gid=1423359058";
+
+const FIRST_ROUND = ["BUF vs BOS","TBL vs MTL","CAR vs OTT","PIT vs PHI","COL vs LAK","DAL vs MIN","VGK vs UTA","EDM vs ANA"];
+const SECOND_ROUND = ["Atlantic Division","Metropolitan Division","Central Division","Pacific Division"];
+const CONF_FINALS = ["Eastern Conference","Western Conference"];
+const FINAL = "Stanley Cup Champion";
+const ENTRY_COLUMNS = ["Twitter Handle","Twitter Link","Bracket Name","Bracket #","Bracket Link",...FIRST_ROUND.flatMap(m=>[m,m+" Number of Games"]),...SECOND_ROUND,...CONF_FINALS,FINAL,"Tie Breaker"];
+
+let brackets = [];
+let resultsMap = {};
+let leaderboard = [];
+
+function byId(id){ return document.getElementById(id); }
+function setStatus(msg){ byId('status').textContent = msg; }
+function escapeHtml(value){ return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function csvCell(value){ return `"${String(value ?? '').replace(/"/g,'""')}"`; }
+
+function parseCSV(text){
+  const rows=[]; let row=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i], next=text[i+1];
+    if(inQuotes){
+      if(ch==='"' && next==='"'){ field+='"'; i++; }
+      else if(ch==='"'){ inQuotes=false; }
+      else { field+=ch; }
+    } else {
+      if(ch==='"') inQuotes=true;
+      else if(ch===','){ row.push(field); field=''; }
+      else if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(ch==='\r'){}
+      else { field+=ch; }
+    }
+  }
+  row.push(field); rows.push(row);
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+
+function rowsToObjects(rows){
+  if(!rows.length) return [];
+  const headers = rows[0].map(h => String(h).trim());
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (r[i] ?? '').trim());
+    return obj;
+  });
+}
+
+function downloadCSV(name, rows){
+  if(!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [headers.map(csvCell).join(',')].concat(rows.map(r => headers.map(h => csvCell(r[h])).join(','))).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function buildResultsMap(rows){
+  const map = {};
+  rows.forEach(r => {
+    const key = (r.Key || '').trim();
+    if(key) map[key] = (r.Value || '').trim();
+  });
+  return map;
+}
+
+function score(entry, results){
+  let pts = 0, bonus = 0, correctPicks = 0;
+  FIRST_ROUND.forEach(m => {
+    if(entry[m] && results[m] && entry[m].toUpperCase() === results[m].toUpperCase()){ pts += 10; correctPicks += 1; }
+    if(entry[m + " Number of Games"] && results[m + " Number of Games"] && String(entry[m + " Number of Games"]).trim() === String(results[m + " Number of Games"]).trim()){ pts += 3; bonus += 1; }
+  });
+  SECOND_ROUND.forEach(r => { if(entry[r] && results[r] && entry[r].toUpperCase() === results[r].toUpperCase()){ pts += 25; correctPicks += 1; } });
+  CONF_FINALS.forEach(r => { if(entry[r] && results[r] && entry[r].toUpperCase() === results[r].toUpperCase()){ pts += 50; correctPicks += 1; } });
+  if(entry[FINAL] && results[FINAL] && entry[FINAL].toUpperCase() === results[FINAL].toUpperCase()){ pts += 100; correctPicks += 1; }
+  const tb = Number(entry["Tie Breaker"] || ''), actualTb = Number(results["Tie Breaker"] || '');
+  const tbDiff = Number.isFinite(tb) && Number.isFinite(actualTb) ? Math.abs(tb - actualTb) : null;
+  return { pts, bonus, correctPicks, tbDiff };
+}
+
+function rebuildLeaderboard(){
+  leaderboard = brackets.map(b => ({ ...b, ...score(b, resultsMap) })).sort((a,b) => {
+    if(b.pts !== a.pts) return b.pts - a.pts;
+    if(b.bonus !== a.bonus) return b.bonus - a.bonus;
+    const ad = a.tbDiff == null ? Number.POSITIVE_INFINITY : a.tbDiff;
+    const bd = b.tbDiff == null ? Number.POSITIVE_INFINITY : b.tbDiff;
+    if(ad !== bd) return ad - bd;
+    return (a["Bracket Name"] || '').localeCompare(b["Bracket Name"] || '');
+  });
+}
+
+function renderLeaderboard(){
+  const search = (byId('leaderboardSearch').value || '').trim().toUpperCase();
+  const filtered = leaderboard.filter(b => !search || [b["Twitter Handle"], b["Bracket Name"], b["Stanley Cup Champion"], b["Tie Breaker"]].some(v => String(v || '').toUpperCase().includes(search)));
+  byId('leaderboardTable').querySelector('tbody').innerHTML = filtered.length ? filtered.map((b,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
+      <td>${escapeHtml(b["Bracket Name"] || '')}</td>
+      <td class="score">${b.pts}</td>
+      <td>${b.correctPicks}</td>
+      <td>${b.bonus}</td>
+      <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
+      <td>${b.tbDiff == null ? '' : b.tbDiff}</td>
+      <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
+      <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">Open</a>` : ''}</td>
+    </tr>`).join('') : `<tr><td colspan="10" class="muted">No leaderboard data.</td></tr>`;
+}
+
+function renderEntries(){
+  const search = (byId('entrySearch').value || '').trim().toUpperCase();
+  const filtered = brackets.filter(b => !search || ENTRY_COLUMNS.some(col => String(b[col] || '').toUpperCase().includes(search)));
+  byId('entryCount').textContent = `${filtered.length} bracket(s)`;
+  byId('entriesTable').querySelector('thead').innerHTML = '<tr><th>Twitter</th><th>Bracket Name</th><th>Bracket #</th><th>Champion</th><th>Tie Breaker</th><th>Bracket Link</th></tr>';
+  byId('entriesTable').querySelector('tbody').innerHTML = filtered.length ? filtered.map(b => `
+    <tr>
+      <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
+      <td><button class="btn" style="padding:6px 10px" onclick="showEntry(${JSON.stringify(b["Bracket Name"] || '')})">${escapeHtml(b["Bracket Name"] || '')}</button></td>
+      <td>${escapeHtml(b["Bracket #"] || '')}</td>
+      <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
+      <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
+      <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">Open</a>` : ''}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="muted">No entries found.</td></tr>`;
+}
+
+function showEntry(bracketName){
+  const entry = brackets.find(b => (b["Bracket Name"] || '') === bracketName);
+  if(!entry) return;
+  byId('entryViewer').classList.remove('hidden');
+  const sections = [
+    {title:'Info', lines:[['Twitter Handle',entry['Twitter Handle']],['Bracket Name',entry['Bracket Name']],['Bracket #',entry['Bracket #']],['Tie Breaker',entry['Tie Breaker']],['Bracket Link', entry['Bracket Link'] ? `<a href="${escapeHtml(entry['Bracket Link'])}" target="_blank" rel="noopener">Open bracket</a>` : '']]},
+    {title:'First Round', lines:FIRST_ROUND.flatMap(m => [[m, entry[m]],[m + ' Games', entry[m + ' Number of Games']]])},
+    {title:'Division Winners', lines:SECOND_ROUND.map(k => [k, entry[k]])},
+    {title:'Conference Winners', lines:CONF_FINALS.map(k => [k, entry[k]])},
+    {title:'Final', lines:[[FINAL, entry[FINAL]]]},
+  ];
+  byId('viewerGrid').innerHTML = sections.map(sec => `
+    <div class="viewer-card">
+      <h4>${escapeHtml(sec.title)}</h4>
+      ${sec.lines.map(([label,val]) => `<div class="line"><div class="small">${escapeHtml(label)}</div><div>${val && String(val).startsWith('<a ') ? val : escapeHtml(val || '')}</div></div>`).join('')}
+    </div>`).join('');
+  byId('entryViewer').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderResults(){
+  const rows = Object.entries(resultsMap);
+  byId('resultsTable').querySelector('tbody').innerHTML = rows.length ? rows.map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join('') : `<tr><td colspan="2" class="muted">No results loaded.</td></tr>`;
+}
+
+async function loadData(){
+  setStatus('Loading live Google Sheets data...');
+  try{
+    const [bracketsText, resultsText] = await Promise.all([fetch(BRACKETS_URL).then(r=>r.text()), fetch(RESULTS_URL).then(r=>r.text())]);
+    brackets = rowsToObjects(parseCSV(bracketsText));
+    resultsMap = buildResultsMap(rowsToObjects(parseCSV(resultsText)));
+    rebuildLeaderboard(); renderLeaderboard(); renderEntries(); renderResults();
+    byId('downloadLeaderboardBtn').disabled = !leaderboard.length;
+    byId('downloadEntriesBtn').disabled = !brackets.length;
+    setStatus(`Loaded ${brackets.length} bracket(s).`);
+  } catch (err) {
+    console.error(err);
+    setStatus('Could not load the Google Sheets CSV feeds.');
+  }
+}
+
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const t = btn.dataset.tab;
+  byId('leaderboardTab').classList.toggle('hidden', t !== 'leaderboard');
+  byId('entriesTab').classList.toggle('hidden', t !== 'entries');
+  byId('resultsTab').classList.toggle('hidden', t !== 'results');
+}));
+
+byId('refreshBtn').addEventListener('click', loadData);
+byId('leaderboardSearch').addEventListener('input', renderLeaderboard);
+byId('entrySearch').addEventListener('input', renderEntries);
+byId('downloadLeaderboardBtn').addEventListener('click', () => downloadCSV('leaderboard.csv', leaderboard.map((b,i) => ({Rank:i+1,'Twitter Handle':b['Twitter Handle'] || '','Twitter Link':b['Twitter Link'] || '','Bracket Name':b['Bracket Name'] || '',Points:b.pts,'Correct Picks':b.correctPicks,'Exact Games Bonus':b.bonus,'Tie Breaker':b['Tie Breaker'] || '','Tie Breaker Diff':b.tbDiff == null ? '' : b.tbDiff,Champion:b['Stanley Cup Champion'] || '','Bracket #':b['Bracket #'] || '','Bracket Link':b['Bracket Link'] || ''}))));
+byId('downloadEntriesBtn').addEventListener('click', () => downloadCSV('entries.csv', brackets));
+
+loadData();
+</script>
+</body>
+</html>
