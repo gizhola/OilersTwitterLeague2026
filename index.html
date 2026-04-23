@@ -246,11 +246,108 @@ function buildResultsMap(rows){
   return map;
 }
 
+function getEliminatedTeams(results){
+  const eliminated = new Set();
+
+  const firstRoundPairs = {
+    "BUF vs BOS": ["BUF", "BOS"],
+    "TBL vs MTL": ["TBL", "MTL"],
+    "CAR vs OTT": ["CAR", "OTT"],
+    "PIT vs PHI": ["PIT", "PHI"],
+    "COL vs LAK": ["COL", "LAK"],
+    "DAL vs MIN": ["DAL", "MIN"],
+    "VGK vs UTA": ["VGK", "UTA"],
+    "EDM vs ANA": ["EDM", "ANA"]
+  };
+
+  const divisionSources = {
+    "Atlantic Division": ["BUF vs BOS", "TBL vs MTL"],
+    "Metropolitan Division": ["CAR vs OTT", "PIT vs PHI"],
+    "Central Division": ["COL vs LAK", "DAL vs MIN"],
+    "Pacific Division": ["VGK vs UTA", "EDM vs ANA"]
+  };
+
+  const conferenceSources = {
+    "Eastern Conference": ["Atlantic Division", "Metropolitan Division"],
+    "Western Conference": ["Central Division", "Pacific Division"]
+  };
+
+  // First Round eliminations
+  FIRST_ROUND.forEach(matchup => {
+    const winner = (results[matchup] || '').toUpperCase();
+    const teams = firstRoundPairs[matchup] || [];
+    if(winner && teams.length === 2){
+      teams.forEach(team => {
+        if(team !== winner) eliminated.add(team);
+      });
+    }
+  });
+
+  // Second Round / Division eliminations
+  SECOND_ROUND.forEach(div => {
+    const winner = (results[div] || '').toUpperCase();
+    if(!winner) return;
+
+    const sourceMatchups = divisionSources[div] || [];
+    const possibleTeams = sourceMatchups
+      .map(m => (results[m] || '').toUpperCase())
+      .filter(Boolean);
+
+    possibleTeams.forEach(team => {
+      if(team !== winner) eliminated.add(team);
+    });
+  });
+
+  // Conference Final eliminations
+  CONF_FINALS.forEach(conf => {
+    const winner = (results[conf] || '').toUpperCase();
+    if(!winner) return;
+
+    const sourceDivisions = conferenceSources[conf] || [];
+    const possibleTeams = sourceDivisions
+      .map(d => (results[d] || '').toUpperCase())
+      .filter(Boolean);
+
+    possibleTeams.forEach(team => {
+      if(team !== winner) eliminated.add(team);
+    });
+  });
+
+  // Stanley Cup Final elimination
+  const champion = (results[FINAL] || '').toUpperCase();
+  if(champion){
+    const finalists = CONF_FINALS
+      .map(c => (results[c] || '').toUpperCase())
+      .filter(Boolean);
+
+    finalists.forEach(team => {
+      if(team !== champion) eliminated.add(team);
+    });
+  }
+
+  return eliminated;
+}
+
+function canStillEarnForPick(pickedTeam, resultKey, results, eliminatedTeams){
+  const picked = (pickedTeam || '').toUpperCase();
+  const actual = (results[resultKey] || '').toUpperCase();
+
+  if(!picked) return false;
+
+  // If the result is known, the only way to earn or keep possible points is to be correct.
+  if(actual) return picked === actual;
+
+  // If the result is not known yet, the pick is only still possible if the team is not eliminated.
+  return !eliminatedTeams.has(picked);
+}
+
 function score(entry, results){
   let pts = 0;
   let bonus = 0;
   let correctPicks = 0;
   let maxPossible = 0;
+
+  const eliminatedTeams = getEliminatedTeams(results);
 
   FIRST_ROUND.forEach(m => {
     const pickedWinner = (entry[m] || '').toUpperCase();
@@ -258,25 +355,29 @@ function score(entry, results){
     const pickedGames = String(entry[m + " Number of Games"] || '').trim();
     const actualGames = String(results[m + " Number of Games"] || '').trim();
 
+    const winnerPossible = canStillEarnForPick(pickedWinner, m, results, eliminatedTeams);
+
     if(actualWinner){
       if(pickedWinner && pickedWinner === actualWinner){
         pts += 10;
         correctPicks += 1;
         maxPossible += 10;
       }
-    } else if(pickedWinner){
+    } else if(winnerPossible){
       maxPossible += 10;
     }
 
     // Exact-games bonus only counts if the series winner was also picked correctly.
+    // For max possible, the bonus only remains possible if that picked winner can still win.
     if(actualWinner){
       if(pickedWinner && pickedWinner === actualWinner && actualGames && pickedGames && pickedGames === actualGames){
         pts += 3;
         bonus += 1;
         maxPossible += 3;
+      } else if(pickedWinner && pickedWinner === actualWinner && !actualGames && pickedGames){
+        maxPossible += 3;
       }
-    } else if(pickedWinner && pickedGames){
-      // Series is not decided yet, so this bonus is still possible.
+    } else if(winnerPossible && pickedGames){
       maxPossible += 3;
     }
   });
@@ -284,13 +385,15 @@ function score(entry, results){
   SECOND_ROUND.forEach(r => {
     const picked = (entry[r] || '').toUpperCase();
     const actual = (results[r] || '').toUpperCase();
+    const possible = canStillEarnForPick(picked, r, results, eliminatedTeams);
+
     if(actual){
       if(picked && picked === actual){
         pts += 25;
         correctPicks += 1;
         maxPossible += 25;
       }
-    } else if(picked){
+    } else if(possible){
       maxPossible += 25;
     }
   });
@@ -298,26 +401,30 @@ function score(entry, results){
   CONF_FINALS.forEach(r => {
     const picked = (entry[r] || '').toUpperCase();
     const actual = (results[r] || '').toUpperCase();
+    const possible = canStillEarnForPick(picked, r, results, eliminatedTeams);
+
     if(actual){
       if(picked && picked === actual){
         pts += 50;
         correctPicks += 1;
         maxPossible += 50;
       }
-    } else if(picked){
+    } else if(possible){
       maxPossible += 50;
     }
   });
 
   const pickedChampion = (entry[FINAL] || '').toUpperCase();
   const actualChampion = (results[FINAL] || '').toUpperCase();
+  const championPossible = canStillEarnForPick(pickedChampion, FINAL, results, eliminatedTeams);
+
   if(actualChampion){
     if(pickedChampion && pickedChampion === actualChampion){
       pts += 100;
       correctPicks += 1;
       maxPossible += 100;
     }
-  } else if(pickedChampion){
+  } else if(championPossible){
     maxPossible += 100;
   }
 
