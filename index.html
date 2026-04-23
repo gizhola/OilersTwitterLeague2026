@@ -268,13 +268,15 @@ function score(entry, results){
       maxPossible += 10;
     }
 
-    if(actualGames){
-      if(pickedGames && pickedGames === actualGames){
+    // Exact-games bonus only counts if the series winner was also picked correctly.
+    if(actualWinner){
+      if(pickedWinner && pickedWinner === actualWinner && actualGames && pickedGames && pickedGames === actualGames){
         pts += 3;
         bonus += 1;
         maxPossible += 3;
       }
-    } else if(pickedGames){
+    } else if(pickedWinner && pickedGames){
+      // Series is not decided yet, so this bonus is still possible.
       maxPossible += 3;
     }
   });
