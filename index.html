@@ -168,7 +168,7 @@ a:hover{text-decoration:underline}
   <section id="leaderboardTab" class="card">
     <div class="topbar">
       <input id="leaderboardSearch" class="search" type="text" placeholder="Search leaderboard by bracket name, handle, or champion…" style="flex:1 1 360px" />
-      <div class="helper">Sorted by points, then exact First Round games bonus, then tie-breaker closeness.</div>
+      <div class="helper">Sorted by points, then tie-breaker closeness.</div>
     </div>
 
 ```
@@ -183,7 +183,6 @@ a:hover{text-decoration:underline}
         <th>Correct Picks</th>
         <th>Exact Games Bonus</th>
         <th>Tie Breaker</th>
-        <th>Tie Breaker Diff</th>
         <th>Champion</th>
         <th>Bracket</th>
       </tr>
@@ -348,7 +347,6 @@ function rebuildLeaderboard(){
     return { ...b, pts:s.pts, bonus:s.bonus, correctPicks:s.correctPicks, tbDiff:s.tbDiff };
   }).sort((a,b) => {
     if(b.pts !== a.pts) return b.pts - a.pts;
-    if(b.bonus !== a.bonus) return b.bonus - a.bonus;
     const ad = a.tbDiff == null ? Number.POSITIVE_INFINITY : a.tbDiff;
     const bd = b.tbDiff == null ? Number.POSITIVE_INFINITY : b.tbDiff;
     if(ad !== bd) return ad - bd;
@@ -395,12 +393,11 @@ function renderLeaderboard(){
         <td>${b.correctPicks}</td>
         <td>${b.bonus}</td>
         <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
-        <td>${b.tbDiff == null ? '' : b.tbDiff}</td>
         <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
         <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">Open</a>` : ''}</td>
       </tr>
     `;
-  }).join('') : `<tr><td colspan="10" class="muted">No leaderboard data.</td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="muted">No leaderboard data.</td></tr>`;
 }
 
 function renderEntries(){
