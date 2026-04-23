@@ -392,17 +392,6 @@ function updateStats(){
   byId('statBrackets').textContent = brackets.length;
   byId('statLeader').textContent = leaderboard[0]?.["Bracket Name"] || '—';
   byId('statTopScore').textContent = leaderboard[0]?.pts ?? 0;
-
-  const counts = {};
-  brackets.forEach(b => {
-    const champ = (b[FINAL] || '').trim();
-    if(champ) counts[champ] = (counts[champ] || 0) + 1;
-  });
-  let best = '—', bestCount = -1;
-  Object.entries(counts).forEach(([k,v]) => {
-    if(v > bestCount){ best = k; bestCount = v; }
-  });
-  byId('statChampion').textContent = best;
 }
 
 function renderLeaderboard(){
