@@ -394,9 +394,20 @@ function updateStats(){
   byId('statTopScore').textContent = leaderboard[0]?.pts ?? 0;
 }
 
+function hasResultsData(){
+  return [
+    ...FIRST_ROUND,
+    ...FIRST_ROUND.map(m => m + " Number of Games"),
+    ...SECOND_ROUND,
+    ...CONF_FINALS,
+    FINAL
+  ].some(key => String(resultsMap[key] || '').trim() !== '');
+}
+
 function renderLeaderboard(){
   const search = (byId('leaderboardSearch').value || '').trim().toUpperCase();
   const tbody = byId('leaderboardTable').querySelector('tbody');
+  const shouldRank = hasResultsData();
 
   const filtered = leaderboard.filter(b => {
     if(!search) return true;
@@ -405,20 +416,39 @@ function renderLeaderboard(){
     ].some(v => String(v || '').toUpperCase().includes(search));
   });
 
+  let displayRank = 0;
+  let previousKey = null;
+  let previousRank = '';
+
   tbody.innerHTML = filtered.length ? filtered.map((b,i) => {
-    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+    let rankValue = '';
+
+    if(shouldRank){
+      const tieValue = b.tbDiff == null ? 'NO_TB' : String(b.tbDiff);
+      const rankKey = `${b.pts}|${tieValue}`;
+
+      if(rankKey === previousKey){
+        rankValue = previousRank;
+      } else {
+        displayRank = i + 1;
+        rankValue = displayRank;
+        previousRank = rankValue;
+        previousKey = rankKey;
+      }
+    }
+
+    const rankClass = rankValue === 1 ? 'rank-1' : rankValue === 2 ? 'rank-2' : rankValue === 3 ? 'rank-3' : '';
     return `
       <tr>
-        <td><span class="rank-pill ${rankClass}">${i + 1}</span></td>
+        <td>${rankValue ? `<span class="rank-pill ${rankClass}">${rankValue}</span>` : ''}</td>
         <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
         <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Bracket Name"] || '')}</a>` : escapeHtml(b["Bracket Name"] || '')}</td>
         <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
+        <td>${b.maxPossible}</td>
         <td>${b.pts}</td>
         <td>${b.correctPicks}</td>
         <td>${b.bonus}</td>
         <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
-        <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
-        
       </tr>
     `;
   }).join('') : `<tr><td colspan="9" class="muted">No leaderboard data.</td></tr>`;
