@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -7,108 +6,65 @@
 <title>Oilers Twitter League 2026 NHL Bracket Viewer</title>
 <style>
 :root{
-  --bg:#07111f;
-  --bg2:#0d1728;
-  --panel:#101c31;
-  --panel2:#15233d;
-  --panel3:#1a2c4b;
-  --text:#edf4ff;
-  --muted:#9fb1cc;
-  --line:#263b63;
-  --accent:#ff6a00; /* Oilers orange */
-  --accent2:#1e5bc6; /* Oilers blue */
-  --gold:#ffd166;
-  --silver:#d9e2f2;
-  --bronze:#d8a47f;
-  --shadow:0 10px 30px rgba(0,0,0,.28);
+  --bg:#07111f; --bg2:#0d1728; --panel:#101c31; --panel2:#15233d; --panel3:#1a2c4b;
+  --text:#edf4ff; --muted:#9fb1cc; --line:#263b63; --accent:#ff6a00; --accent2:#1e5bc6;
+  --gold:#ffd166; --silver:#d9e2f2; --bronze:#d8a47f; --shadow:0 10px 30px rgba(0,0,0,.28);
 }
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
+*{box-sizing:border-box} html,body{margin:0;padding:0}
 body{
   font-family:Arial,Helvetica,sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(79,140,255,.15), transparent 28%),
-    radial-gradient(circle at top right, rgba(138,180,255,.12), transparent 25%),
+    radial-gradient(circle at top left, rgba(30,91,198,.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(255,106,0,.12), transparent 25%),
     linear-gradient(180deg, var(--bg), var(--bg2));
-  color:var(--text);
-  min-height:100vh;
+  color:var(--text); min-height:100vh;
 }
 .wrap{max-width:1600px;margin:0 auto;padding:24px}
 .hero{
   background:linear-gradient(135deg, rgba(30,91,198,.25), rgba(255,106,0,.15));
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:24px;
-  margin-bottom:18px;
-  box-shadow:var(--shadow);
+  border:1px solid var(--line); border-radius:24px; padding:24px; margin-bottom:18px; box-shadow:var(--shadow);
 }
 .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.hero-title{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hero-logo{height:52px;width:auto;object-fit:contain}
 h1{margin:0 0 8px;font-size:34px;letter-spacing:.2px}
 .sub{color:var(--muted);max-width:900px;line-height:1.45}
 .hero-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .btn{
-  background:var(--panel3);
-  border:1px solid var(--line);
-  color:var(--text);
-  padding:10px 14px;
-  border-radius:12px;
-  cursor:pointer;
-  font-weight:700;
-  transition:.18s ease;
+  background:var(--panel3); border:1px solid var(--line); color:var(--text);
+  padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; transition:.18s ease;
 }
 .btn:hover{transform:translateY(-1px);border-color:var(--accent)}
-.btn.primary{background:linear-gradient(180deg, var(--accent), #356fe0);border-color:#427ff1}
+.btn.primary{background:linear-gradient(180deg, var(--accent), #d95700);border-color:#ff8733}
 .status{color:var(--muted);font-size:14px}
 .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .tab{
-  background:var(--panel2);
-  border:1px solid var(--line);
-  color:var(--text);
-  padding:10px 16px;
-  border-radius:999px;
-  cursor:pointer;
-  font-weight:700;
-  transition:.18s ease;
+  background:var(--panel2); border:1px solid var(--line); color:var(--text);
+  padding:10px 16px; border-radius:999px; cursor:pointer; font-weight:700; transition:.18s ease;
 }
-.tab.active{background:linear-gradient(180deg, var(--accent), #356fe0);border-color:#427ff1}
+.tab.active{background:linear-gradient(180deg, var(--accent), #d95700);border-color:#ff8733}
 .card{
-  background:rgba(16,28,49,.9);
-  border:1px solid var(--line);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:18px;
-  box-shadow:var(--shadow);
+  background:rgba(16,28,49,.9); border:1px solid var(--line); border-radius:22px;
+  padding:16px; margin-bottom:18px; box-shadow:var(--shadow);
 }
 .search{
-  width:100%;
-  background:#0b1527;
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px 14px;
-  outline:none;
+  width:100%; background:#0b1527; color:var(--text); border:1px solid var(--line);
+  border-radius:14px; padding:12px 14px; outline:none;
 }
 .search:focus{border-color:var(--accent)}
 .table-wrap{
-  overflow:auto;
-  border:1px solid var(--line);
-  border-radius:18px;
-  background:rgba(10,18,32,.55);
+  overflow:auto; border:1px solid var(--line); border-radius:18px; background:rgba(10,18,32,.55);
 }
 table{width:100%;border-collapse:collapse;min-width:980px}
 th,td{
-  padding:12px 12px;
-  border-bottom:1px solid rgba(255,255,255,.07);
-  text-align:left;
-  vertical-align:top;
-  white-space:nowrap;
-  font-size:14px;
+  padding:12px 12px; border-bottom:1px solid rgba(255,255,255,.07); text-align:left;
+  vertical-align:top; white-space:nowrap; font-size:14px;
 }
 th{position:sticky;top:0;z-index:1;background:#13213a;color:#dce8ff}
 tbody tr:hover{background:rgba(138,180,255,.06)}
 .hidden{display:none}
 .muted{color:var(--muted)}
-a{color:var(--accent2);text-decoration:none}
+a{color:#8ab4ff;text-decoration:none}
 a:hover{text-decoration:underline}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px}
 .stat{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -128,16 +84,20 @@ a:hover{text-decoration:underline}
 .viewer-value{font-weight:700}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .helper{font-size:13px;color:var(--muted)}
-@media (max-width:760px){.wrap{padding:14px}h1{font-size:28px}.hero,.card{padding:14px}}
+@media (max-width:760px){
+  .wrap{padding:14px} h1{font-size:28px} .hero,.card{padding:14px} .hero-logo{height:42px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <section class="hero">
     <div class="hero-top">
-      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-        <img src="oilers-logo.png" alt="Oilers Logo" style="height:48px; width:auto; object-fit:contain;">
-        <h1>🔵🟠 Oilers Twitter League 2026 NHL Bracket Viewer</h1>
+      <div>
+        <div class="hero-title">
+          <img src="oilers-logo.png" alt="Oilers Logo" class="hero-logo">
+          <h1>🔵🟠 Oilers Twitter League 2026 NHL Bracket Viewer</h1>
+        </div>
         <div class="sub">
           Live leaderboard and public bracket browser powered by your Google Sheets data.
           Search for any bracket name, open a full bracket view, and track the standings as results update.
@@ -149,15 +109,12 @@ a:hover{text-decoration:underline}
       </div>
     </div>
 
-```
-<div class="stat-grid">
-  <div class="stat"><div class="label">Total Brackets</div><div class="value" id="statBrackets">0</div></div>
-  <div class="stat"><div class="label">Leader</div><div class="value" id="statLeader" style="font-size:18px">—</div></div>
-  <div class="stat"><div class="label">Top Score</div><div class="value" id="statTopScore">0</div></div>
-  <div class="stat"><div class="label">Most Picked Champion</div><div class="value" id="statChampion" style="font-size:18px">—</div></div>
-</div>
-```
-
+    <div class="stat-grid">
+      <div class="stat"><div class="label">Total Brackets</div><div class="value" id="statBrackets">0</div></div>
+      <div class="stat"><div class="label">Leader</div><div class="value" id="statLeader" style="font-size:18px">—</div></div>
+      <div class="stat"><div class="label">Top Score</div><div class="value" id="statTopScore">0</div></div>
+      <div class="stat"><div class="label">Most Picked Champion</div><div class="value" id="statChampion" style="font-size:18px">—</div></div>
+    </div>
   </section>
 
   <div class="tabs">
@@ -167,53 +124,47 @@ a:hover{text-decoration:underline}
 
   <section id="leaderboardTab" class="card">
     <div class="topbar">
-      <input id="leaderboardSearch" class="search" type="text" placeholder="Search leaderboard by bracket name, handle, or champion…" style="flex:1 1 360px" />
+      <input id="leaderboardSearch" class="search" type="text" placeholder="Search leaderboard by bracket name, handle, or cup pick…" style="flex:1 1 360px" />
       <div class="helper">Sorted by points, then tie-breaker closeness.</div>
     </div>
 
-```
-<div class="table-wrap">
-  <table id="leaderboardTable">
-    <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Twitter</th>
-        <th>Bracket Name</th>
-        <th>Points</th>
-        <th>Correct Picks</th>
-        <th>Exact Games Bonus</th>
-        <th>Tie Breaker</th>
-        <th>Champion</th>
-        <th>Bracket</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-```
-
+    <div class="table-wrap">
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Twitter Name</th>
+            <th>Bracket Name</th>
+            <th>Cup Pick</th>
+            <th>Max Possible</th>
+            <th>Points</th>
+            <th>Correct Picks</th>
+            <th>Exact Games Bonus</th>
+            <th>Tie Breaker</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="entriesTab" class="card hidden">
     <div class="topbar">
-      <input id="entrySearch" class="search" type="text" placeholder="Find a bracket by name, handle, team, or champion…" style="flex:1 1 360px" />
+      <input id="entrySearch" class="search" type="text" placeholder="Find a bracket by name, handle, team, or cup pick…" style="flex:1 1 360px" />
       <div class="helper" id="entryCount">0 bracket(s)</div>
     </div>
 
-```
-<div class="table-wrap">
-  <table id="entriesTable">
-    <thead></thead>
-    <tbody></tbody>
-  </table>
-</div>
+    <div class="table-wrap">
+      <table id="entriesTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
-<div id="entryViewer" class="viewer-wrap hidden">
-  <h3 style="margin:0 0 12px">Bracket Viewer</h3>
-  <div id="viewerGrid" class="viewer-grid"></div>
-</div>
-```
-
+    <div id="entryViewer" class="viewer-wrap hidden">
+      <h3 style="margin:0 0 12px">Bracket Viewer</h3>
+      <div id="viewerGrid" class="viewer-grid"></div>
+    </div>
   </section>
 </div>
 
@@ -250,7 +201,7 @@ function escapeHtml(value){
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
-    .replace(/\"/g,'&quot;')
+    .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
 }
 
@@ -299,52 +250,86 @@ function score(entry, results){
   let pts = 0;
   let bonus = 0;
   let correctPicks = 0;
+  let maxPossible = 0;
 
   FIRST_ROUND.forEach(m => {
-    if(entry[m] && results[m] && entry[m].toUpperCase() === results[m].toUpperCase()){
-      pts += 10;
-      correctPicks += 1;
+    const pickedWinner = (entry[m] || '').toUpperCase();
+    const actualWinner = (results[m] || '').toUpperCase();
+    const pickedGames = String(entry[m + " Number of Games"] || '').trim();
+    const actualGames = String(results[m + " Number of Games"] || '').trim();
+
+    if(actualWinner){
+      if(pickedWinner && pickedWinner === actualWinner){
+        pts += 10;
+        correctPicks += 1;
+        maxPossible += 10;
+      }
+    } else if(pickedWinner){
+      maxPossible += 10;
     }
-    if(
-      entry[m + " Number of Games"] &&
-      results[m + " Number of Games"] &&
-      String(entry[m + " Number of Games"]).trim() === String(results[m + " Number of Games"]).trim()
-    ){
-      pts += 3;
-      bonus += 1;
+
+    if(actualGames){
+      if(pickedGames && pickedGames === actualGames){
+        pts += 3;
+        bonus += 1;
+        maxPossible += 3;
+      }
+    } else if(pickedGames){
+      maxPossible += 3;
     }
   });
 
   SECOND_ROUND.forEach(r => {
-    if(entry[r] && results[r] && entry[r].toUpperCase() === results[r].toUpperCase()){
-      pts += 25;
-      correctPicks += 1;
+    const picked = (entry[r] || '').toUpperCase();
+    const actual = (results[r] || '').toUpperCase();
+    if(actual){
+      if(picked && picked === actual){
+        pts += 25;
+        correctPicks += 1;
+        maxPossible += 25;
+      }
+    } else if(picked){
+      maxPossible += 25;
     }
   });
 
   CONF_FINALS.forEach(r => {
-    if(entry[r] && results[r] && entry[r].toUpperCase() === results[r].toUpperCase()){
-      pts += 50;
-      correctPicks += 1;
+    const picked = (entry[r] || '').toUpperCase();
+    const actual = (results[r] || '').toUpperCase();
+    if(actual){
+      if(picked && picked === actual){
+        pts += 50;
+        correctPicks += 1;
+        maxPossible += 50;
+      }
+    } else if(picked){
+      maxPossible += 50;
     }
   });
 
-  if(entry[FINAL] && results[FINAL] && entry[FINAL].toUpperCase() === results[FINAL].toUpperCase()){
-    pts += 100;
-    correctPicks += 1;
+  const pickedChampion = (entry[FINAL] || '').toUpperCase();
+  const actualChampion = (results[FINAL] || '').toUpperCase();
+  if(actualChampion){
+    if(pickedChampion && pickedChampion === actualChampion){
+      pts += 100;
+      correctPicks += 1;
+      maxPossible += 100;
+    }
+  } else if(pickedChampion){
+    maxPossible += 100;
   }
 
   const tb = Number(entry["Tie Breaker"] || '');
   const actualTb = Number(results["Tie Breaker"] || '');
   const tbDiff = Number.isFinite(tb) && Number.isFinite(actualTb) ? Math.abs(tb - actualTb) : null;
 
-  return { pts, bonus, correctPicks, tbDiff };
+  return { pts, bonus, correctPicks, tbDiff, maxPossible };
 }
 
 function rebuildLeaderboard(){
   leaderboard = brackets.map(b => {
     const s = score(b, resultsMap);
-    return { ...b, pts:s.pts, bonus:s.bonus, correctPicks:s.correctPicks, tbDiff:s.tbDiff };
+    return { ...b, pts:s.pts, bonus:s.bonus, correctPicks:s.correctPicks, tbDiff:s.tbDiff, maxPossible:s.maxPossible };
   }).sort((a,b) => {
     if(b.pts !== a.pts) return b.pts - a.pts;
     const ad = a.tbDiff == null ? Number.POSITIVE_INFINITY : a.tbDiff;
@@ -388,13 +373,13 @@ function renderLeaderboard(){
       <tr>
         <td><span class="rank-pill ${rankClass}">${i + 1}</span></td>
         <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
-        <td>${escapeHtml(b["Bracket Name"] || '')}</td>
+        <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Bracket Name"] || '')}</a>` : escapeHtml(b["Bracket Name"] || '')}</td>
+        <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
+        <td>${b.maxPossible}</td>
         <td>${b.pts}</td>
         <td>${b.correctPicks}</td>
         <td>${b.bonus}</td>
         <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
-        <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
-        <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">Open</a>` : ''}</td>
       </tr>
     `;
   }).join('') : `<tr><td colspan="9" class="muted">No leaderboard data.</td></tr>`;
@@ -412,7 +397,7 @@ function renderEntries(){
   const thead = byId('entriesTable').querySelector('thead');
   const tbody = byId('entriesTable').querySelector('tbody');
 
-  thead.innerHTML = '<tr><th>Twitter</th><th>Bracket Name</th><th>Bracket #</th><th>Champion</th><th>Tie Breaker</th><th>Bracket</th></tr>';
+  thead.innerHTML = '<tr><th>Twitter Name</th><th>Bracket Name</th><th>Bracket #</th><th>Cup Pick</th><th>Tie Breaker</th></tr>';
   tbody.innerHTML = filtered.length ? filtered.map((b) => `
     <tr>
       <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
@@ -420,9 +405,8 @@ function renderEntries(){
       <td>${escapeHtml(b["Bracket #"] || '')}</td>
       <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
       <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
-      <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">Open</a>` : ''}</td>
     </tr>
-  `).join('') : `<tr><td colspan="6" class="muted">No entries found.</td></tr>`;
+  `).join('') : `<tr><td colspan="5" class="muted">No entries found.</td></tr>`;
 }
 
 function showEntry(encodedName){
@@ -436,7 +420,7 @@ function showEntry(encodedName){
     {
       title: 'Info',
       lines: [
-        ['Twitter Handle', entry['Twitter Handle']],
+        ['Twitter Name', entry['Twitter Handle']],
         ['Bracket Name', entry['Bracket Name']],
         ['Bracket #', entry['Bracket #']],
         ['Tie Breaker', entry['Tie Breaker']],
@@ -506,6 +490,5 @@ byId('entrySearch').addEventListener('input', renderEntries);
 
 loadData();
 </script>
-
 </body>
 </html>
