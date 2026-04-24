@@ -89,11 +89,13 @@ h1{margin:0 0 8px;font-size:34px;letter-spacing:.2px}
   outline:none;
 }
 .search:focus{border-color:var(--accent)}
-.table-wrap{
-  overflow:auto;
-  border:1px solid var(--line);
-  border-radius:18px;
-  background:rgba(10,18,32,.55);
+.table-wrap {
+  max-height: 600px;   /* adjust to taste */
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(10,18,32,.55);
 }
 table{width:100%;border-collapse:collapse;min-width:980px}
 th,td{
