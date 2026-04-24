@@ -168,7 +168,7 @@ a:hover{text-decoration:underline}
   <section id="leaderboardTab" class="card">
     <div class="topbar">
       <input id="leaderboardSearch" class="search" type="text" placeholder="Search leaderboard by bracket name, handle, or champion…" style="flex:1 1 360px" />
-      <div class="helper">Sorted by points, then tie-breaker closeness.</div>
+      <div class="helper">Sorted by points, then max possible points. Tie-breaker is only used after all series are complete.</div>
     </div>
 
 ```
@@ -295,17 +295,99 @@ function buildResultsMap(rows){
   return map;
 }
 
+function getEliminatedTeams(results){
+  const eliminated = new Set();
+
+  const firstRoundPairs = {
+    "BUF vs BOS": ["BUF", "BOS"],
+    "TBL vs MTL": ["TBL", "MTL"],
+    "CAR vs OTT": ["CAR", "OTT"],
+    "PIT vs PHI": ["PIT", "PHI"],
+    "COL vs LAK": ["COL", "LAK"],
+    "DAL vs MIN": ["DAL", "MIN"],
+    "VGK vs UTA": ["VGK", "UTA"],
+    "EDM vs ANA": ["EDM", "ANA"]
+  };
+
+  const divisionSources = {
+    "Atlantic Division": ["BUF vs BOS", "TBL vs MTL"],
+    "Metropolitan Division": ["CAR vs OTT", "PIT vs PHI"],
+    "Central Division": ["COL vs LAK", "DAL vs MIN"],
+    "Pacific Division": ["VGK vs UTA", "EDM vs ANA"]
+  };
+
+  const conferenceSources = {
+    "Eastern Conference": ["Atlantic Division", "Metropolitan Division"],
+    "Western Conference": ["Central Division", "Pacific Division"]
+  };
+
+  FIRST_ROUND.forEach(matchup => {
+    const winner = (results[matchup] || '').toUpperCase();
+    const teams = firstRoundPairs[matchup] || [];
+    if(winner && teams.length === 2){
+      teams.forEach(team => {
+        if(team !== winner) eliminated.add(team);
+      });
+    }
+  });
+
+  SECOND_ROUND.forEach(div => {
+    const winner = (results[div] || '').toUpperCase();
+    if(!winner) return;
+    const possibleTeams = (divisionSources[div] || [])
+      .map(m => (results[m] || '').toUpperCase())
+      .filter(Boolean);
+    possibleTeams.forEach(team => {
+      if(team !== winner) eliminated.add(team);
+    });
+  });
+
+  CONF_FINALS.forEach(conf => {
+    const winner = (results[conf] || '').toUpperCase();
+    if(!winner) return;
+    const possibleTeams = (conferenceSources[conf] || [])
+      .map(d => (results[d] || '').toUpperCase())
+      .filter(Boolean);
+    possibleTeams.forEach(team => {
+      if(team !== winner) eliminated.add(team);
+    });
+  });
+
+  const champion = (results[FINAL] || '').toUpperCase();
+  if(champion){
+    CONF_FINALS
+      .map(c => (results[c] || '').toUpperCase())
+      .filter(Boolean)
+      .forEach(team => {
+        if(team !== champion) eliminated.add(team);
+      });
+  }
+
+  return eliminated;
+}
+
+function canStillEarnForPick(pickedTeam, resultKey, results, eliminatedTeams){
+  const picked = (pickedTeam || '').toUpperCase();
+  const actual = (results[resultKey] || '').toUpperCase();
+  if(!picked) return false;
+  if(actual) return picked === actual;
+  return !eliminatedTeams.has(picked);
+}
+
 function score(entry, results){
   let pts = 0;
   let bonus = 0;
   let correctPicks = 0;
   let maxPossible = 0;
 
+  const eliminatedTeams = getEliminatedTeams(results);
+
   FIRST_ROUND.forEach(m => {
     const pickedWinner = (entry[m] || '').toUpperCase();
     const actualWinner = (results[m] || '').toUpperCase();
     const pickedGames = String(entry[m + " Number of Games"] || '').trim();
     const actualGames = String(results[m + " Number of Games"] || '').trim();
+    const winnerPossible = canStillEarnForPick(pickedWinner, m, results, eliminatedTeams);
 
     if(actualWinner){
       if(pickedWinner && pickedWinner === actualWinner){
@@ -313,17 +395,19 @@ function score(entry, results){
         correctPicks += 1;
         maxPossible += 10;
       }
-    } else if(pickedWinner){
+    } else if(winnerPossible){
       maxPossible += 10;
     }
 
-    if(actualGames){
-      if(pickedGames && pickedGames === actualGames){
+    if(actualWinner){
+      if(pickedWinner && pickedWinner === actualWinner && actualGames && pickedGames && pickedGames === actualGames){
         pts += 3;
         bonus += 1;
         maxPossible += 3;
+      } else if(pickedWinner && pickedWinner === actualWinner && !actualGames && pickedGames){
+        maxPossible += 3;
       }
-    } else if(pickedGames){
+    } else if(winnerPossible && pickedGames){
       maxPossible += 3;
     }
   });
@@ -331,13 +415,14 @@ function score(entry, results){
   SECOND_ROUND.forEach(r => {
     const picked = (entry[r] || '').toUpperCase();
     const actual = (results[r] || '').toUpperCase();
+    const possible = canStillEarnForPick(picked, r, results, eliminatedTeams);
     if(actual){
       if(picked && picked === actual){
         pts += 25;
         correctPicks += 1;
         maxPossible += 25;
       }
-    } else if(picked){
+    } else if(possible){
       maxPossible += 25;
     }
   });
@@ -345,26 +430,28 @@ function score(entry, results){
   CONF_FINALS.forEach(r => {
     const picked = (entry[r] || '').toUpperCase();
     const actual = (results[r] || '').toUpperCase();
+    const possible = canStillEarnForPick(picked, r, results, eliminatedTeams);
     if(actual){
       if(picked && picked === actual){
         pts += 50;
         correctPicks += 1;
         maxPossible += 50;
       }
-    } else if(picked){
+    } else if(possible){
       maxPossible += 50;
     }
   });
 
   const pickedChampion = (entry[FINAL] || '').toUpperCase();
   const actualChampion = (results[FINAL] || '').toUpperCase();
+  const championPossible = canStillEarnForPick(pickedChampion, FINAL, results, eliminatedTeams);
   if(actualChampion){
     if(pickedChampion && pickedChampion === actualChampion){
       pts += 100;
       correctPicks += 1;
       maxPossible += 100;
     }
-  } else if(pickedChampion){
+  } else if(championPossible){
     maxPossible += 100;
   }
 
@@ -372,18 +459,38 @@ function score(entry, results){
   const actualTb = Number(results["Tie Breaker"] || '');
   const tbDiff = Number.isFinite(tb) && Number.isFinite(actualTb) ? Math.abs(tb - actualTb) : null;
 
-  return { pts, bonus, correctPicks, tbDiff, maxPossible: pts + maxPossible - pts };
+  return { pts, bonus, correctPicks, tbDiff, maxPossible };
+}
+
+function isBracketComplete(){
+  const requiredKeys = [
+    ...FIRST_ROUND,
+    ...FIRST_ROUND.map(m => m + " Number of Games"),
+    ...SECOND_ROUND,
+    ...CONF_FINALS,
+    FINAL,
+    "Tie Breaker"
+  ];
+  return requiredKeys.every(key => String(resultsMap[key] || '').trim() !== '');
 }
 
 function rebuildLeaderboard(){
+  const complete = isBracketComplete();
+
   leaderboard = brackets.map(b => {
     const s = score(b, resultsMap);
-    return { ...b, pts:s.pts, bonus:s.bonus, correctPicks:s.correctPicks, tbDiff:s.tbDiff };
+    return { ...b, pts:s.pts, bonus:s.bonus, correctPicks:s.correctPicks, tbDiff:s.tbDiff, maxPossible:s.maxPossible };
   }).sort((a,b) => {
     if(b.pts !== a.pts) return b.pts - a.pts;
-    const ad = a.tbDiff == null ? Number.POSITIVE_INFINITY : a.tbDiff;
-    const bd = b.tbDiff == null ? Number.POSITIVE_INFINITY : b.tbDiff;
-    if(ad !== bd) return ad - bd;
+
+    if(!complete){
+      if(b.maxPossible !== a.maxPossible) return b.maxPossible - a.maxPossible;
+    } else {
+      const ad = a.tbDiff == null ? Number.POSITIVE_INFINITY : a.tbDiff;
+      const bd = b.tbDiff == null ? Number.POSITIVE_INFINITY : b.tbDiff;
+      if(ad !== bd) return ad - bd;
+    }
+
     return (a["Bracket Name"] || '').localeCompare(b["Bracket Name"] || '');
   });
 }
@@ -402,6 +509,14 @@ function hasResultsData(){
     ...CONF_FINALS,
     FINAL
   ].some(key => String(resultsMap[key] || '').trim() !== '');
+}
+
+function getRankKey(row){
+  if(isBracketComplete()){
+    const tieValue = row.tbDiff == null ? 'NO_TB' : String(row.tbDiff);
+    return `${row.pts}|${tieValue}`;
+  }
+  return `${row.pts}|${row.maxPossible}`;
 }
 
 function renderLeaderboard(){
@@ -424,8 +539,7 @@ function renderLeaderboard(){
     let rankValue = '';
 
     if(shouldRank){
-      const tieValue = b.tbDiff == null ? 'NO_TB' : String(b.tbDiff);
-      const rankKey = `${b.pts}|${tieValue}`;
+      const rankKey = getRankKey(b);
 
       if(rankKey === previousKey){
         rankValue = previousRank;
