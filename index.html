@@ -179,12 +179,12 @@ a:hover{text-decoration:underline}
         <th>Rank</th>
         <th>Twitter Name</th>
         <th>Bracket Name</th>
-        <th>Cup Pick</th>
-        <th>Max Possible</th>
-        <th>Points</th>
-        <th>Correct Picks</th>
-        <th>Exact Games Bonus</th>
-        <th>Tie Breaker</th>
+        <th style="text-align:center;">Cup Pick</th>
+        <th style="text-align:center;">Max Possible Pts</th>
+        <th style="text-align:center;">Total Pts</th>
+        <th style="text-align:center;">Correct Picks</th>
+        <th style="text-align:center;">Exact # Games</th>
+        <th style="text-align:center;">Tie Breaker</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -557,12 +557,12 @@ function renderLeaderboard(){
         <td>${rankValue ? `<span class="rank-pill ${rankClass}">${rankValue}</span>` : ''}</td>
         <td>${b["Twitter Link"] ? `<a href="${escapeHtml(b["Twitter Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Twitter Handle"] || '')}</a>` : escapeHtml(b["Twitter Handle"] || '')}</td>
         <td>${b["Bracket Link"] ? `<a href="${escapeHtml(b["Bracket Link"])}" target="_blank" rel="noopener">${escapeHtml(b["Bracket Name"] || '')}</a>` : escapeHtml(b["Bracket Name"] || '')}</td>
-        <td>${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
-        <td>${b.maxPossible}</td>
-        <td>${b.pts}</td>
-        <td>${b.correctPicks}</td>
-        <td>${b.bonus}</td>
-        <td>${escapeHtml(b["Tie Breaker"] || '')}</td>
+        <td style="text-align:center;">${escapeHtml(b["Stanley Cup Champion"] || '')}</td>
+        <td style="text-align:center;">${b.maxPossible}</td>
+        <td style="text-align:center;">${b.pts}</td>
+        <td style="text-align:center;">${b.correctPicks}</td>
+        <td style="text-align:center;">${b.bonus}</td>
+        <td style="text-align:center;">${escapeHtml(b["Tie Breaker"] || '')}</td>
       </tr>
     `;
   }).join('') : `<tr><td colspan="9" class="muted">No leaderboard data.</td></tr>`;
