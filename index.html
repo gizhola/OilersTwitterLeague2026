@@ -593,7 +593,11 @@ async function loadData(){
       fetch(RESULTS_URL).then(r => r.text())
     ]);
 
-    brackets = rowsToObjects(parseCSV(bracketsText));
+    brackets = rowsToObjects(parseCSV(bracketsText))
+      .filter(b => {
+        const twitterLink = String(b["Twitter Link"] || '').trim();
+        return twitterLink.startsWith("http");
+      });
     resultsMap = buildResultsMap(rowsToObjects(parseCSV(resultsText)));
 
     rebuildLeaderboard();
